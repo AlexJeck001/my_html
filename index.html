@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>爱心弹窗 · 满屏祝福</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0a0a1a;
+      font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* 星空背景 */
+    .star {
+      position: fixed;
+      width: 2px;
+      height: 2px;
+      background: #fff;
+      border-radius: 50%;
+      opacity: 0.7;
+      animation: twinkle 2s infinite alternate;
+      pointer-events: none;
+      z-index: 0;
+    }
+    @keyframes twinkle {
+      0% { opacity: 0.2; transform: scale(0.6); }
+      100% { opacity: 1; transform: scale(1.2); }
+    }
+
+    /* 标题 */
+    .title {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: rgba(255, 200, 220, 0.35);
+      font-size: 3.5rem;
+      font-weight: 300;
+      letter-spacing: 0.15em;
+      white-space: nowrap;
+      z-index: 1;
+      pointer-events: none;
+      text-shadow: 0 0 30px rgba(255, 100, 150, 0.3);
+      animation: titlePulse 3s infinite alternate;
+    }
+    @keyframes titlePulse {
+      0% { opacity: 0.25; transform: translate(-50%, -50%) scale(0.98); }
+      100% { opacity: 0.55; transform: translate(-50%, -50%) scale(1.02); }
+    }
+
+    /* 弹窗卡片 */
+    .popup {
+      position: fixed;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 140px;
+      height: 56px;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #3a2a3a;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0;
+      transform: scale(0.5);
+      animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      padding: 0 6px;
+      line-height: 1.2;
+      backdrop-filter: blur(1px);
+    }
+    .popup.fade-out {
+      animation: popOut 0.45s ease forwards;
+    }
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.3) translateY(10px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes popOut {
+      0% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.6) translateY(-12px); }
+    }
+
+    /* 爱心高亮 */
+    .popup.heart {
+      box-shadow: 0 0 22px rgba(255, 80, 130, 0.8), 0 0 40px rgba(255, 80, 130, 0.4);
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      z-index: 99;
+    }
+
+    /* 结束语 */
+    .final-msg {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      color: #fff;
+      font-size: 3rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-shadow: 0 0 20px #ff4d79, 0 0 50px #ff4d79, 0 0 80px #ff1a4b;
+      z-index: 1000;
+      pointer-events: none;
+      opacity: 0;
+      transition: none;
+      white-space: nowrap;
+    }
+    .final-msg.show {
+      animation: finalAppear 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    @keyframes finalAppear {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2) rotate(-8deg); }
+      60% { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(2deg); }
+      100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+    }
+
+    /* 重置按钮 */
+    .reset-btn {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 34px;
+      border: 1px solid rgba(255, 150, 180, 0.6);
+      border-radius: 40px;
+      background: rgba(255, 100, 140, 0.15);
+      color: #ffb3c6;
+      font-size: 15px;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      z-index: 2000;
+      backdrop-filter: blur(8px);
+      transition: all 0.3s ease;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .reset-btn.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .reset-btn:hover {
+      background: rgba(255, 100, 140, 0.35);
+      color: #fff;
+      border-color: #ff7a9e;
+      box-shadow: 0 0 24px rgba(255, 100, 140, 0.5);
+      transform: translateX(-50%) scale(1.06);
+    }
+
+    /* 提示文字 */
+    .hint {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 200, 220, 0.5);
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      z-index: 50;
+      pointer-events: none;
+      transition: opacity 1s;
+    }
+  </style>
+</head>
+<body>
+  <div class="title">❤ 满屏心意 ❤</div>
+  <div class="hint" id="hint">正在生成爱心…</div>
+  <div class="final-msg" id="finalMsg">我喜欢你</div>
+  <button class="reset-btn" id="resetBtn">再来一次 ✨</button>
+
+  <script>
+    (function() {
+      'use strict';
+
+      // ---------- 配置 ----------
+      const TIPS = [
+        '学业有成', '好好爱自己', '好好吃饭', '保持好心情',
+        '身体健康', '顺顺利利', '别熬夜', '天凉了多穿衣服',
+        '天天开心', '万事胜意', '平安喜乐', '好事发生'
+      ];
+
+      const COLORS = [
+        '#ffb3c6', '#a8d8ea', '#b5e6b5', '#fff4b8',
+        '#ff8fab', '#87ceeb', '#ffc9de', '#c8e6c9'
+      ];
+
+      const POPUP_W = 140;
+      const POPUP_H = 56;
+      const HEART_POPUP_COUNT = 100;      // 爱心轮廓弹窗数量
+      const HEART_DELAY = 28;              // 每个弹窗出现间隔 (ms)
+      const SCATTER_DELAY = 4;             // 散落弹窗出现间隔 (ms)
+      const HOLD_AFTER_SCATTER = 2600;     // 散落完成后停留时间 (ms)
+      const FADE_OUT_STEP = 8;             // 消退间隔 (ms)
+
+      // ---------- 状态 ----------
+      let heartPopups = [];
+      let allPopups = [];
+      let timers = [];
+      let running = false;
+      let resetBtn, hintEl, finalMsg;
+
+      // ---------- 工具 ----------
+      function rand(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      function randInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      function choice(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+
+      function clearTimers() {
+        timers.forEach(t => clearTimeout(t));
+        timers = [];
+      }
+
+      function sleep(ms) {
+        return new Promise(resolve => {
+          const id = setTimeout(resolve, ms);
+          timers.push(id);
+        });
+      }
+
+      // ---------- 生成爱心坐标 ----------
+      function heartPoints(n, screenW, screenH) {
+        const scale = Math.min(screenW / 900, screenH / 900) * 20;
+        const cx = screenW / 2;
+        const cy = screenH / 2;
+        const points = [];
+
+        for (let i = 0; i < n; i++) {
+          const t = (i / n) * 2 * Math.PI;
+          const x = 16 * Math.pow(Math.sin(t), 3);
+          const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t)
+                  - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+
+          let sx = cx + x * scale;
+          let sy = cy - y * scale - 60;
+
+          sx = Math.max(0, Math.min(sx, screenW - POPUP_W));
+          sy = Math.max(0, Math.min(sy, screenH - POPUP_H));
+
+          points.push([sx, sy]);
+        }
+        return points;
+      }
+
+      // ---------- 创建弹窗 ----------
+      function createPopup(x, y, text, isHeart) {
+        const el = document.createElement('div');
+        el.className = 'popup' + (isHeart ? ' heart' : '');
+        el.textContent = text;
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        el.style.background = `linear-gradient(145deg, ${choice(COLORS)}, ${choice(COLORS)})`;
+
+        // 随机微旋转，更自然
+        const rot = rand(-4, 4);
+        el.style.setProperty('--rot', rot + 'deg');
+        el.style.transform = `scale(0.5) rotate(${rot}deg)`;
+
+        // 覆盖动画中的旋转
+        el.style.animation = 'none';
+        void el.offsetWidth;
+        el.style.animation = `popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards`;
+
+        document.body.appendChild(el);
+        return el;
+      }
+
+      // ---------- 销毁弹窗 ----------
+      function destroyPopup(el) {
+        if (!el || !el.parentNode) return;
+        el.classList.add('fade-out');
+        setTimeout(() => {
+          if (el.parentNode) el.parentNode.removeChild(el);
+        }, 420);
+      }
+
+      // ---------- 主流程 ----------
+      async function run() {
+        if (running) return;
+        running = true;
+
+        resetBtn.classList.remove('visible');
+        finalMsg.classList.remove('show');
+        finalMsg.style.opacity = '0';
+        hintEl.style.opacity = '1';
+        hintEl.textContent = '正在生成爱心…';
+
+        // 清掉旧的
+        document.querySelectorAll('.popup').forEach(el => el.remove());
+        heartPopups = [];
+        allPopups = [];
+        clearTimers();
+
+        const sw = window.innerWidth;
+        const sh = window.innerHeight;
+
+        // ---- 阶段 1：爱心轮廓 ----
+        const points = heartPoints(HEART_POPUP_COUNT, sw, sh);
+
+        for (let i = 0; i < points.length; i++) {
+          const [x, y] = points[i];
+          const isLast = (i === points.length - 1);
+          const text = isLast ? '我喜欢你' : choice(TIPS);
+          const el = createPopup(x, y, text, isLast);
+          heartPopups.push(el);
+          allPopups.push(el);
+          await sleep(HEART_DELAY);
+        }
+
+        hintEl.textContent = '爱心成形 ❤';
+        await sleep(1100);
+
+        // ---- 阶段 2：散落祝福 ----
+        hintEl.textContent = '撒下满屏祝福…';
+
+        // 先让爱心轮廓淡出
+        heartPopups.forEach(el => destroyPopup(el));
+        heartPopups = [];
+
+        const count = Math.min(
+          Math.floor(sw / POPUP_W) * Math.floor(sh / 40) + 50,
+          520
+        );
+
+        for (let i = 0; i < count; i++) {
+          const x = randInt(0, Math.max(0, sw - POPUP_W));
+          const y = randInt(0, Math.max(0, sh - POPUP_H));
+          const el = createPopup(x, y, choice(TIPS), false);
+          allPopups.push(el);
+          await sleep(SCATTER_DELAY);
+        }
+
+        hintEl.textContent = '满屏都是想对你说的话';
+
+        // ---- 阶段 3：停留 ----
+        await sleep(HOLD_AFTER_SCATTER);
+
+        // ---- 阶段 4：逐渐消退 ----
+        hintEl.style.opacity = '0';
+
+        const step = allPopups.length > 0
+          ? Math.max(2, Math.floor(FADE_OUT_STEP))
+          : 0;
+
+        for (let i = 0; i < allPopups.length; i++) {
+          destroyPopup(allPopups[i]);
+          if (i % step === 0) {
+            await sleep(12);
+          }
+        }
+        allPopups = [];
+
+        // ---- 阶段 5：最终告白 ----
+        await sleep(450);
+        finalMsg.classList.add('show');
+
+        await sleep(2600);
+        resetBtn.classList.add('visible');
+        running = false;
+      }
+
+      // ---------- 星空生成 ----------
+      function createStars() {
+        const count = Math.min(140, Math.floor(window.innerWidth * window.innerHeight / 12000));
+        const frag = document.createDocumentFragment();
+        for (let i = 0; i < count; i++) {
+          const s = document.createElement('div');
+          s.className = 'star';
+          s.style.left = Math.random() * 100 + '%';
+          s.style.top = Math.random() * 100 + '%';
+          s.style.animationDelay = (Math.random() * 2.5) + 's';
+          s.style.animationDuration = (1.2 + Math.random() * 2.2) + 's';
+          s.style.width = s.style.height = (1 + Math.random() * 2) + 'px';
+          frag.appendChild(s);
+        }
+        document.body.appendChild(frag);
+      }
+
+      // ---------- 初始化 ----------
+      function init() {
+        resetBtn = document.getElementById('resetBtn');
+        hintEl = document.getElementById('hint');
+        finalMsg = document.getElementById('finalMsg');
+
+        createStars();
+
+        resetBtn.addEventListener('click', () => {
+          run();
+        });
+
+        // 窗口大小改变时重新开始（防抖）
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(() => {
+            if (!running) run();
+          }, 400);
+        });
+
+        // 启动
+        setTimeout(run, 600);
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+</body>
+</html>
